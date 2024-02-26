@@ -1,6 +1,9 @@
 const express = require("express");
-const { fetchFPLData } = require("./fetchData");
+const { fetchFPLData } = require("./src/utils/fetchFPLData");
 const cron = require("node-cron");
+const { getPlayersData, getTeamsData } = require("./src/utils/loadDataFromDB");
+const playerRoutes = require("./src/routes/playerRoutes");
+const teamRoutes = require("./src/routes/teamRoutes");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -12,10 +15,16 @@ const port = process.env.PORT || 3000;
 //   fetchFPLData();
 // });
 
-// For testing purposes, call directly
-fetchFPLData().then(() =>
-  console.log("Data fetching and insertion test complete.")
-);
+getPlayersData()
+  .then(() => console.log("Initialized playersData in memory"))
+  .catch((err) => console.error("Failed to initialize playersData", err));
+
+getTeamsData()
+  .then(() => console.log("Initialized teamsData in memory"))
+  .catch((err) => console.error("Failed to initialize teamsData", err));
+
+app.use("/api/players", playerRoutes);
+app.use("/api/teams", teamRoutes);
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
