@@ -5,8 +5,20 @@ const { getPlayersData, getTeamsData } = require("./src/utils/loadDataFromDB");
 const playerRoutes = require("./src/routes/playerRoutes");
 const teamRoutes = require("./src/routes/teamRoutes");
 
+//CORS
+const cors = require("cors");
+
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 5432;
+
+// CORS options
+const corsOptions = {
+  origin: "http://localhost:3000",
+  optionsSuccessStatus: 200,
+};
+
+// Use CORS with options
+app.use(cors(corsOptions));
 
 // Schedule the function to run once a week. Adjust the cron pattern as needed.
 // 0 0 * * 0 is for every Sunday at midnight. Adjust according to your needs.
@@ -14,6 +26,8 @@ const port = process.env.PORT || 3000;
 //   console.log("Fetching FPL data...");
 //   fetchFPLData();
 // });
+
+// fetchFPLData().then(() => console.log("fetched and updated data"));
 
 getPlayersData()
   .then(() => console.log("Initialized playersData in memory"))

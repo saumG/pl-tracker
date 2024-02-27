@@ -48,11 +48,19 @@ const fetchFPLData = async () => {
       }
     };
 
+    let getTeam = (team_code) => {
+      // Find the team with the matching team_code
+      const team = teams.find((team) => team.code === team_code);
+      // Return the short_name of the found team, or null if not found
+      return team ? team.short_name : null;
+    };
+
     // Process players
     const players = data.elements.map((player) => ({
       ...player,
       singular_name: getPosition(player.element_type)[0],
       singular_name_short: getPosition(player.element_type)[1],
+      team_name: getTeam(player.team_code),
     }));
 
     // Insert into PostgreSQL
@@ -94,7 +102,7 @@ const fetchFPLData = async () => {
         expected_goal_involvements_per_90, expected_goals_conceded_per_90,
         goals_conceded_per_90, now_cost_rank, now_cost_rank_type, form_rank,
         form_rank_type, points_per_game_rank, points_per_game_rank_type,
-        selected_rank, selected_rank_type, starts_per_90, clean_sheets_per_90, singular_name, singular_name_short
+        selected_rank, selected_rank_type, starts_per_90, clean_sheets_per_90, singular_name, singular_name_short, team_name
     ) VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
         $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27,
@@ -102,7 +110,7 @@ const fetchFPLData = async () => {
         $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53,
         $54, $55, $56, $57, $58, $59, $60, $61, $62, $63, $64, $65, $66,
         $67, $68, $69, $70, $71, $72, $73, $74, $75, $76, $77, $78, $79,
-        $80, $81, $82, $83, $84, $85, $86, $87, $88, $89, $90
+        $80, $81, $82, $83, $84, $85, $86, $87, $88, $89, $90, $91
     )
     ON CONFLICT (id) DO UPDATE SET
         chance_of_playing_next_round = EXCLUDED.chance_of_playing_next_round,
@@ -193,7 +201,8 @@ const fetchFPLData = async () => {
         starts_per_90 = EXCLUDED.starts_per_90,
         clean_sheets_per_90 = EXCLUDED.clean_sheets_per_90,
         singular_name = EXCLUDED.singular_name,
-        singular_name_short = EXCLUDED.singular_name_short
+        singular_name_short = EXCLUDED.singular_name_short,
+        team_name = EXCLUDED.team_name
     `;
 
     for (const player of players) {
@@ -317,5 +326,6 @@ module.exports = { fetchFPLData };
 //     starts_per_90 NUMERIC,
 //     clean_sheets_per_90 NUMERIC,
 //     singular_name VARCHAR(255),
-//     singular_name_short VARCHAR(255)
+//     singular_name_short VARCHAR(255),
+//     team_name TEXT,
 // );
