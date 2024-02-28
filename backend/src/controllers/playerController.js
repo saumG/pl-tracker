@@ -11,8 +11,8 @@ exports.getAllPlayers = async (req, res) => {
 exports.searchPlayers = (req, res) => {
   const { name, team } = req.query;
   try {
-    // Filter the playersData array based on search parameters
-    const filteredPlayers = playersData.filter((player) => {
+    // Filter theplayers array based on search parameters
+    const filteredPlayers = players.filter((player) => {
       return (
         (!name || player.name.toLowerCase().includes(name.toLowerCase())) &&
         (!team || player.team === team)
@@ -22,6 +22,6 @@ exports.searchPlayers = (req, res) => {
   } catch (error) {
     res
       .status(500)
-      .send("Server error, could not search/filter amongs playersData array");
+      .send("Server error, could not search/filter amongst players array");
   }
 };

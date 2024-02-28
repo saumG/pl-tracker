@@ -57,8 +57,8 @@ const propertyNamesMapping = {
   ict_index: "ICT Index",
   expected_goals: "xG",
   expected_assists: "xA",
-  expected_goal_involvements: "x Goal Involvements",
-  expected_goals_conceded: "x Goals Conceded",
+  expected_goal_involvements: "xGI",
+  expected_goals_conceded: "xGA",
   team_name: "Team Name",
   singular_name_short: "Position",
 };
@@ -79,6 +79,7 @@ const orderedProperties = [
   "expected_assists",
   "expected_goal_involvements",
   "expected_goals_conceded",
+  "points_per_game",
 ];
 
 const PlayerSection = () => {
@@ -86,7 +87,6 @@ const PlayerSection = () => {
   const [playerData, setPlayerData] = useState([]);
 
   useEffect(() => {
-    // Function to fetch players
     const fetchPlayers = async () => {
       try {
         const response = await axios.get("http://localhost:5432/api/players");
@@ -96,7 +96,7 @@ const PlayerSection = () => {
       }
     };
     fetchPlayers();
-  }, []); // Empty dependency array means this effect runs once when the component mounts
+  }, []);
 
   return (
     <div className="p-5">

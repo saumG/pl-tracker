@@ -4,6 +4,7 @@ const cron = require("node-cron");
 const { getPlayersData, getTeamsData } = require("./src/utils/loadDataFromDB");
 const playerRoutes = require("./src/routes/playerRoutes");
 const teamRoutes = require("./src/routes/teamRoutes");
+const builderRoutes = require("./src/routes/builderRoutes");
 
 //CORS
 const cors = require("cors");
@@ -39,6 +40,7 @@ getTeamsData()
 
 app.use("/api/players", playerRoutes);
 app.use("/api/teams", teamRoutes);
+app.use("/api/builder", builderRoutes);
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
