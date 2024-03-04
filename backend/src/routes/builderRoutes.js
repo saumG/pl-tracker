@@ -3,6 +3,6 @@ const express = require("express");
 const router = express.Router();
 const { getBuiltTeam } = require("../controllers/builderController");
 
-router.get("", getBuiltTeam);
+router.post("", getBuiltTeam);
 
 module.exports = router;

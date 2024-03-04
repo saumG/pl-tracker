@@ -60,7 +60,7 @@ const TeamSection = () => {
         />
       </div>
       <div className="overflow-x-auto">
-        <table className="table-auto w-full">
+        <table className="table-auto">
           <thead className="bg-gray-200">
             <tr>
               {orderedProperties.map((prop) => (
@@ -72,8 +72,12 @@ const TeamSection = () => {
           </thead>
           <tbody>
             {teamData
-              .filter((team) =>
-                team.name.toLowerCase().includes(searchTerm.toLowerCase())
+              .filter(
+                (team) =>
+                  team.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  team.short_name
+                    .toLowerCase()
+                    .includes(searchTerm.toLowerCase())
               )
               .map((team) => (
                 <tr key={team.id}>

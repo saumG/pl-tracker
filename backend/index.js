@@ -38,6 +38,7 @@ getTeamsData()
   .then(() => console.log("Initialized teamsData in memory"))
   .catch((err) => console.error("Failed to initialize teamsData", err));
 
+app.use(express.json());
 app.use("/api/players", playerRoutes);
 app.use("/api/teams", teamRoutes);
 app.use("/api/builder", builderRoutes);

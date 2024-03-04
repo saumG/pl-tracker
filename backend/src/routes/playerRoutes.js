@@ -3,10 +3,10 @@ const express = require("express");
 const router = express.Router();
 const {
   getAllPlayers,
-  searchPlayers,
+  getAllTrimmedPlayers,
 } = require("../controllers/playerController");
 
 router.get("/", getAllPlayers);
-router.get("/search", searchPlayers);
+router.get("/trimmed", getAllTrimmedPlayers);
 
 module.exports = router;
