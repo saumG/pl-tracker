@@ -19,6 +19,7 @@ function buildTeam(
   currentIndex
 ) {
   if (currentIndex >= scoredPlayers.length || currentTeam.length === 15) {
+    console.log(`found a complete team ${JSON.stringify(currentTeam)}`);
     return currentTeam;
   }
 
@@ -208,14 +209,7 @@ exports.getBuiltTeam = async (req, res) => {
   console.log(`inital cost of the team is ${initialCost}`);
 
   // Build the team
-  const selectedTeam = buildTeam(
-    scoredPlayers,
-    positions,
-    budget,
-    initialTeam,
-    initialCost,
-    0
-  );
+  const selectedTeam = {};
 
   console.log(selectedTeam);
 
