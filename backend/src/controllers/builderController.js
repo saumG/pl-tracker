@@ -138,7 +138,6 @@ function normalizeStats(players, weights) {
 
   return normalizedPlayers;
 }
-
 exports.getBuiltTeam = async (req, res) => {
   console.log("Request body:", req.body); // This should log the entire request body
   console.log("Weights from request:", req.body.weights);
@@ -152,17 +151,19 @@ exports.getBuiltTeam = async (req, res) => {
 
   // Fetch all players data
   const players = await getPlayersData(); // Assuming this retrieves full player details
+  console.log(`Fetched ${players.length} players data`);
 
   // Find full details for preselected players
   const preselectedPlayers = getFullPlayerDetails(
     preselectedPlayerIds.map((id) => ({ id })),
     players
   );
+  console.log(
+    `Found full details for ${preselectedPlayers.length} preselected players`
+  );
 
   // Normalize stats values for all players
   const normalizedPlayers = normalizeStats(players, weights);
-
-  // console.log(JSON.stringify(normalizedPlayers));
 
   // Calculate scores for each player based on the selected attributes and weights
   const scoredPlayers = normalizedPlayers.map((player) => {
@@ -176,7 +177,44 @@ exports.getBuiltTeam = async (req, res) => {
   // Sort players by score in descending order
   scoredPlayers.sort((a, b) => b.score - a.score);
 
-  console.log(JSON.stringify(scoredPlayers[0]));
+  const unselectedPlayers = scoredPlayers.filter(
+    (player) => !preselectedPlayerIds.includes(player.id)
+  );
+  console.log(
+    `Filtered out preselected players, ${unselectedPlayers.length} players remaining`
+  );
+
+  const unselectedPlayersIds = unselectedPlayers.map((player) => player.id);
+
+  // Create simplified player objects
+  const simplifiedPlayers = unselectedPlayers.reduce((acc, player) => {
+    // Initialize the player object with common attributes
+    let playerObj = {
+      id: player.id,
+      firstName: player.first_name,
+      lastName: player.second_name,
+      score: player.score,
+      cost: player.now_cost,
+      GKP: player.singular_name_short === "GKP" ? 1 : 0,
+      DEF: player.singular_name_short === "DEF" ? 1 : 0,
+      MID: player.singular_name_short === "MID" ? 1 : 0,
+      FWD: player.singular_name_short === "FWD" ? 1 : 0,
+    };
+
+    // Add a binary indicator for each player ID
+    unselectedPlayersIds.forEach((otherPlayerId) => {
+      playerObj[`pl_${otherPlayerId}`] = player.id === otherPlayerId ? 1 : 0;
+    });
+
+    // Add this player object to the accumulator
+    acc[`player_${player.id}`] = playerObj;
+    return acc;
+  }, {});
+  console.log(
+    `Created simplified players objects, total count: ${
+      Object.keys(simplifiedPlayers).length
+    }`
+  );
 
   // Select team composition (2 goalkeepers, 5 defenders, 5 midfielders, and 3 forwards)
   const positions = {
@@ -190,6 +228,12 @@ exports.getBuiltTeam = async (req, res) => {
   const initialCost = initialTeam.reduce(
     (totalCost, player) => totalCost + player.now_cost,
     0
+  );
+
+  const remainingBudget = budget - initialCost;
+
+  console.log(
+    `initial team cost is ${initialCost}. remaining budget is ${remainingBudget}`
   );
 
   // Update positions object based on preselected players
@@ -206,12 +250,89 @@ exports.getBuiltTeam = async (req, res) => {
     }
   });
 
-  console.log(`inital cost of the team is ${initialCost}`);
+  const solver = require("javascript-lp-solver");
 
-  // Build the team
-  const selectedTeam = {};
+  // Create the model for the javascript-lp-solver
+  let model = {
+    optimize: "score",
+    opType: "max",
+    constraints: {
+      cost: { max: remainingBudget },
+      GKP: { equal: positions.GKP.max - positions.GKP.count },
+      DEF: { equal: positions.DEF.max - positions.DEF.count },
+      MID: { equal: positions.MID.max - positions.MID.count },
+      FWD: { equal: positions.FWD.max - positions.FWD.count },
+    },
+    variables: simplifiedPlayers,
+    ints: {},
+  };
 
-  console.log(selectedTeam);
+  Object.keys(simplifiedPlayers).forEach((playerId) => {
+    const player = simplifiedPlayers[playerId];
+    model.constraints[`pl_${player.id}`] = { max: 1 };
+    model.ints[`player_${player.id}`] = 1; // This ensures that solution variables will be integer values
+  });
 
-  res.json(selectedTeam);
+  // Solve the problem
+  const solution = solver.Solve(model);
+  console.log("Solution:", solution);
+
+  // Initialize a map to keep track of the number of players encountered for each position
+  const positionCount = { GKP: 0, DEF: 0, MID: 0, FWD: 0 };
+
+  // Add total_rank and position_rank to each player
+  scoredPlayers.forEach((player, index) => {
+    // The total rank is just the index + 1 (since the array is 0-indexed but ranks start at 1)
+    player.total_rank = index + 1;
+
+    // Increment the position count for this player's position and assign the position rank
+    // player.singular_name_short should be one of 'GKP', 'DEF', 'MID', 'FWD'
+    const position = player.singular_name_short;
+    positionCount[position]++;
+    player.position_rank = positionCount[position];
+  });
+  // Extract IDs from the solution for selected players
+  const selectedPlayerIds = Object.keys(solution)
+    .filter((key) => key.startsWith("player_") && solution[key] === 1)
+    .map((key) => key.split("_")[1]);
+
+  // Convert all preselectedPlayerIds to strings
+  const preselectedPlayerIdsStr = preselectedPlayerIds.map((id) =>
+    id.toString()
+  );
+
+  console.log(preselectedPlayerIdsStr);
+  console.log(selectedPlayerIds);
+
+  // Combine these IDs with the IDs from the initial team
+  const completeTeamIds = [
+    ...new Set([...preselectedPlayerIdsStr, ...selectedPlayerIds]),
+  ]; // Using Set to avoid duplicate IDs
+
+  console.log(completeTeamIds);
+
+  // Create the complete team details
+  const completeTeam = {};
+  completeTeamIds.forEach((id) => {
+    // Find this player in the scoredPlayers array
+    const player =
+      scoredPlayers.find((p) => p.id.toString() === id) ||
+      preselectedPlayers.find((p) => p.id.toString() === id);
+    if (player) {
+      completeTeam[player.id] = {
+        first_name: player.first_name,
+        second_name: player.second_name,
+        id: player.id,
+        score: player.score,
+        total_rank: player.total_rank,
+        position_rank: player.position_rank,
+        cost: player.now_cost,
+      };
+    }
+  });
+
+  console.log(`Final team (Details):`, completeTeam);
+
+  // Return the final team
+  res.json({ team: completeTeam });
 };

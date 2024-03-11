@@ -14,7 +14,10 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.18.2",
+    "glpk.js": "^4.0.2",
+    "javascript-lp-solver": "^0.4.24",
     "node-cron": "^3.0.3",
-    "pg": "^8.11.3"
+    "pg": "^8.11.3",
+    "simplex-solver": "^0.0.3"
   }
 }
